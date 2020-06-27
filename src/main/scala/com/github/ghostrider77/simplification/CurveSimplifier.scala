@@ -33,7 +33,7 @@ class CurveSimplifier(points: Vector[Point]) {
   def radialDistance(epsilon: Double): Vector[Point] = radialDistanceSimplification(points, nrPoints, epsilon)
 
   def perpendicularDistance(epsilon: Double): Vector[Point] =
-    if (isTrivial) points else perpendicularDistanceSimplification(points, nrPoints, epsilon)
+    perpendicularDistanceSimplification(points, nrPoints, epsilon)
 }
 
 object CurveSimplifier {
@@ -43,7 +43,7 @@ object CurveSimplifier {
     @tailrec
     def collectKeyPoints(keyPoints: List[Point], currentKeyPoint: Point, ix: Index): Vector[Point] = {
       val point: Point = points(ix)
-      if (ix == nrPoints - 1) (point :: keyPoints).toVector.reverse
+      if (ix == nrPoints - 1) (point :: keyPoints).reverseIterator.toVector
       else {
         val distance: Double = euclideanDistance(currentKeyPoint, point)
         if (distance >= epsilon) collectKeyPoints(point :: keyPoints, point, ix + 1)
@@ -51,7 +51,7 @@ object CurveSimplifier {
       }
     }
 
-    if (nrPoints < 2) points
+    if (nrPoints <= 2) points
     else {
       val initialKeyPoint: Point = points(0)
       collectKeyPoints(List(initialKeyPoint), initialKeyPoint, ix = 1)
@@ -61,13 +61,12 @@ object CurveSimplifier {
   private def perpendicularDistanceSimplification(points: Vector[Point],
                                                   nrPoints: Int,
                                                   epsilon: Double): Vector[Point] = {
-    require(nrPoints >= 2)
-
     @tailrec
     def collectKeyPoints(keyPoints: List[Point], leftEndPoint: Point, ix: Index): Vector[Point] = {
-      if (ix >= nrPoints - 1) {
+      if (ix == nrPoints) keyPoints.reverseIterator.toVector
+      else if (ix == nrPoints - 1) {
         val lastPoint: Point = points(nrPoints - 1)
-        (lastPoint :: keyPoints).reverse.toVector
+        collectKeyPoints(lastPoint :: keyPoints, lastPoint, ix + 1)
       }
       else {
         val point: Point = points(ix)
@@ -78,8 +77,11 @@ object CurveSimplifier {
       }
     }
 
-    val initialKeyPoint: Point = points(0)
-    collectKeyPoints(List(initialKeyPoint), initialKeyPoint, ix = 1)
+    if (nrPoints <= 2) points
+    else {
+      val initialKeyPoint: Point = points(0)
+      collectKeyPoints(List(initialKeyPoint), initialKeyPoint, ix = 1)
+    }
   }
 
   private def dPSimplification(points: Vector[Point], epsilon: Double): Vector[Point] = {

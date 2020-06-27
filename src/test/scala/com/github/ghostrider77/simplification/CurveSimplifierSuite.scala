@@ -4,9 +4,25 @@ import org.scalatest.{FreeSpec, Inspectors, Matchers, PrivateMethodTester}
 import scala.collection.mutable.{PriorityQueue => Heap}
 
 class CurveSimplifierSuite extends FreeSpec with Matchers with Inspectors with PrivateMethodTester {
-  val tolerance: Double = 1e-8
+  object Curves {
+    val tolerance: Double = 1e-8
+    val points: Vector[Point] =
+      Vector(
+        Point(0, 0),
+        Point(1, 1),
+        Point(0, 2),
+        Point(2, 2),
+        Point(3, 0),
+        Point(4, 0),
+        Point(3, 1),
+        Point(4, 1),
+        Point(5, 0)
+      )
+  }
 
   "CommonFunctions" - {
+    import Curves.tolerance
+
     "DistanceFromSegment" - {
       "Should calculate the distance of a point from a segment given by its endpoints when" - {
         val origin: Point = Point(0, 0)
@@ -85,18 +101,7 @@ class CurveSimplifierSuite extends FreeSpec with Matchers with Inspectors with P
     }
 
     "should remove consecutive vertices for two dimensional curves" - {
-      val points: Vector[Point] =
-        Vector(
-          Point(0, 0),
-          Point(1, 1),
-          Point(0, 2),
-          Point(2, 2),
-          Point(3, 0),
-          Point(4, 0),
-          Point(3, 1),
-          Point(4, 1),
-          Point(5, 0)
-        )
+      import Curves.points
       val simplificator = new CurveSimplifier(points)
 
       "test case 1" in {
@@ -108,6 +113,71 @@ class CurveSimplifierSuite extends FreeSpec with Matchers with Inspectors with P
         val result: Vector[Point] = simplificator.radialDistance(epsilon = 1.2)
         result shouldEqual
           Vector(Point(0, 0), Point(1, 1), Point(0, 2), Point(2, 2), Point(3, 0), Point(4, 1), Point(5, 0))
+      }
+    }
+  }
+
+  "PerpendicularDistanceSimplification" - {
+    "should retrieve the orignal points when there are at most two points only" - {
+      "test case 1" - {
+        val points: Vector[Point] = Vector()
+        val simplificator = new CurveSimplifier(points)
+        simplificator.perpendicularDistance(epsilon = 0.1) shouldBe empty
+      }
+
+      "test case 2" - {
+        val points: Vector[Point] = Vector(Point(0, 0))
+        val simplificator = new CurveSimplifier(points)
+        simplificator.perpendicularDistance(epsilon = 0.1) shouldEqual points
+      }
+
+      "test case 3" - {
+        val points: Vector[Point] = Vector(Point(10, 10), Point(0, 0))
+        val simplificator = new CurveSimplifier(points)
+        simplificator.perpendicularDistance(epsilon = 0.1) shouldEqual points
+      }
+    }
+
+    "should remove the middle point of a segment if it falls within a specified distance tolerance" - {
+      "test case 1" in {
+        val points: Vector[Point] = Vector(Point(0, 0), Point(1, 1), Point(2, 0), Point(3, 0))
+        val simplificator = new CurveSimplifier(points)
+        val result: Vector[Point] = simplificator.perpendicularDistance(epsilon = 0.1)
+        result shouldEqual Vector(Point(0, 0), Point(1, 1), Point(2, 0), Point(3, 0))
+      }
+
+      "test case 2" in {
+        val points: Vector[Point] = Vector(Point(0, 0), Point(1, 1), Point(2, 0), Point(3, 0))
+        val simplificator = new CurveSimplifier(points)
+        val result: Vector[Point] = simplificator.perpendicularDistance(epsilon = 0.9)
+        result shouldEqual Vector(Point(0, 0), Point(1, 1), Point(3, 0))
+      }
+
+      "test case 3" in {
+        val points: Vector[Point] = Vector(Point(0, 0), Point(1, 1), Point(2, 0), Point(3, 0))
+        val simplificator = new CurveSimplifier(points)
+        val result: Vector[Point] = simplificator.perpendicularDistance(epsilon = 1.5)
+        result shouldEqual Vector(Point(0, 0), Point(2, 0), Point(3, 0))
+      }
+    }
+
+    "should remove consecutive vertices for two dimensional curves based on perpendicular distance from segment" - {
+      val simplificator = new CurveSimplifier(Curves.points)
+
+      "test case 1" in {
+        val result: Vector[Point] = simplificator.perpendicularDistance(epsilon = 1.5)
+        result shouldEqual Vector(Point(0, 0), Point(0, 2), Point(3, 0), Point(3, 1), Point(5, 0))
+      }
+
+      "test case 2" in {
+        val result: Vector[Point] = simplificator.perpendicularDistance(epsilon = 1.2)
+        result shouldEqual Vector(Point(0, 0), Point(0, 2), Point(3, 0), Point(3, 1), Point(5, 0))
+      }
+
+      "test case 3" in {
+        val result: Vector[Point] = simplificator.perpendicularDistance(epsilon = 0.9)
+        result shouldEqual
+          Vector(Point(0, 0), Point(1, 1), Point(0, 2), Point(2, 2), Point(4, 0), Point(3, 1), Point(5, 0))
       }
     }
   }
@@ -132,6 +202,7 @@ class CurveSimplifierSuite extends FreeSpec with Matchers with Inspectors with P
     }
 
     "calcMaximalDistanceInSegment" - {
+      import Curves.tolerance
       val calcMaximalDistanceInSegment = PrivateMethod[(Double, Int)](Symbol("calcMaximalDistanceInSegment"))
 
       "Should calculate the index of the point that has the largest distance from a segment" in {
