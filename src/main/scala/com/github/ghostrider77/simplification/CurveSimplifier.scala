@@ -30,8 +30,7 @@ class CurveSimplifier(points: Vector[Point]) {
   def douglasPeucker(epsilon: Double): Vector[Point] =
     if (isTrivial) points else dPSimplification(points, epsilon)
 
-  def radialDistance(epsilon: Double): Vector[Point] =
-    if (isTrivial) points else radialDistanceSimplification(points, nrPoints, epsilon)
+  def radialDistance(epsilon: Double): Vector[Point] = radialDistanceSimplification(points, nrPoints, epsilon)
 
   def perpendicularDistance(epsilon: Double): Vector[Point] =
     if (isTrivial) points else perpendicularDistanceSimplification(points, nrPoints, epsilon)
@@ -41,12 +40,10 @@ object CurveSimplifier {
   private type Index = Int
 
   private def radialDistanceSimplification(points: Vector[Point], nrPoints: Int, epsilon: Double): Vector[Point] = {
-    require(nrPoints >= 1)
-
     @tailrec
     def collectKeyPoints(keyPoints: List[Point], currentKeyPoint: Point, ix: Index): Vector[Point] = {
       val point: Point = points(ix)
-      if (ix == nrPoints - 1) (point :: keyPoints).reverse.toVector
+      if (ix == nrPoints - 1) (point :: keyPoints).toVector.reverse
       else {
         val distance: Double = euclideanDistance(currentKeyPoint, point)
         if (distance >= epsilon) collectKeyPoints(point :: keyPoints, point, ix + 1)
@@ -54,8 +51,11 @@ object CurveSimplifier {
       }
     }
 
-    val initialKeyPoint: Point = points(0)
-    collectKeyPoints(List(initialKeyPoint), initialKeyPoint, ix = 1)
+    if (nrPoints < 2) points
+    else {
+      val initialKeyPoint: Point = points(0)
+      collectKeyPoints(List(initialKeyPoint), initialKeyPoint, ix = 1)
+    }
   }
 
   private def perpendicularDistanceSimplification(points: Vector[Point],
