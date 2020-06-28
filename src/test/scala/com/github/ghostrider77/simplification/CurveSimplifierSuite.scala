@@ -248,6 +248,45 @@ class CurveSimplifierSuite extends FreeSpec with Matchers with Inspectors with P
   }
 
   "ModifiedDouglasPeucker" - {
+    "Should keep the requested number of points that are far enough from the actual segment" - {
+      val points: Vector[Point] = Vector(Point(0, 2), Point(1, 3), Point(2, 0), Point(3, 1), Point(4, 2))
+      val simplificator = new CurveSimplifier(points)
 
+      "test case 1" in {
+        val result: Vector[Point] = simplificator.modifiedDouglasPeucker(n = -1)
+        result shouldEqual Vector()
+      }
+
+      "test case 2" in {
+        val result: Vector[Point] = simplificator.modifiedDouglasPeucker(n = 1)
+        result shouldEqual Vector(Point(0, 2))
+      }
+
+      "test case 3" in {
+        val result: Vector[Point] = simplificator.modifiedDouglasPeucker(n = 2)
+        result shouldEqual Vector(Point(0, 2), Point(4, 2))
+      }
+
+      "test case 4" in {
+        val result: Vector[Point] = simplificator.modifiedDouglasPeucker(n = 10)
+        result shouldEqual points
+      }
+
+      "test case 5" in {
+        val result: Vector[Point] = simplificator.modifiedDouglasPeucker(n = 3)
+        result shouldEqual Vector(Point(0, 2), Point(2, 0), Point(4, 2))
+      }
+
+      "test case 6" in {
+        val result: Vector[Point] = simplificator.modifiedDouglasPeucker(n = 4)
+        result shouldEqual Vector(Point(0, 2), Point(1, 3), Point(2, 0), Point(4, 2))
+      }
+    }
+
+    "Should keep points of a two dimensional curve based on perpendicular distance from actual segment" in {
+      val simplificator = new CurveSimplifier(Curves.points)
+      val result: Vector[Point] = simplificator.modifiedDouglasPeucker(n = 4)
+      result shouldEqual Vector(Point(0, 0), Point(0, 2), Point(3, 0), Point(5, 0))
+    }
   }
 }

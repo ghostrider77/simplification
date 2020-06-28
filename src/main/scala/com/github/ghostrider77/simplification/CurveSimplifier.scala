@@ -102,7 +102,6 @@ object CurveSimplifier {
   }
 
   private def modifiedDPSimplification(points: Vector[Point], nrPoints: Int, n: Int): Vector[Point] = {
-    require(n >= 2)
     val heap: Heap[(Double, Index)] = Heap((Double.PositiveInfinity, 0), (Double.PositiveInfinity, nrPoints - 1))
 
     @tailrec
@@ -115,9 +114,12 @@ object CurveSimplifier {
       case _ :: rest => loop(rest)
     }
 
-    loop(List((0, nrPoints - 1)))
-    val indices: Vector[Index] = extractMaxDistanceIndices(heap, n)
-    indices.map(points)
+    if (n >= nrPoints) points
+    else {
+      loop(List((0, nrPoints - 1)))
+      val indices: Vector[Index] = extractMaxDistanceIndices(heap, n)
+      indices.map(points)
+    }
   }
 
   private def calcMaximalDistanceInSegment(points: Vector[Point], startIx: Index, endIx: Index): (Double, Index) = {
