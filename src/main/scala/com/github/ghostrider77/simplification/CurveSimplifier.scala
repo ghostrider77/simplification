@@ -12,7 +12,6 @@ class CurveSimplifier(points: Vector[Point]) {
                           dPSimplification}
 
   private val nrPoints: Int = points.length
-  private val isTrivial: Boolean = nrPoints <= 2
 
   private def edgeCase(n: Int): Option[Vector[Point]] = {
     if (n <= 0 || points.isEmpty) Some(Vector())
@@ -27,8 +26,7 @@ class CurveSimplifier(points: Vector[Point]) {
     case Some(result) => result
   }
 
-  def douglasPeucker(epsilon: Double): Vector[Point] =
-    if (isTrivial) points else dPSimplification(points, epsilon)
+  def douglasPeucker(epsilon: Double): Vector[Point] = dPSimplification(points, nrPoints, epsilon)
 
   def radialDistance(epsilon: Double): Vector[Point] = radialDistanceSimplification(points, nrPoints, epsilon)
 
@@ -84,8 +82,23 @@ object CurveSimplifier {
     }
   }
 
-  private def dPSimplification(points: Vector[Point], epsilon: Double): Vector[Point] = {
-    ???
+  private def dPSimplification(points: Vector[Point], nrPoints: Int, epsilon: Double): Vector[Point] = {
+    @tailrec
+    def loop(acc: List[Index], stack: List[(Index, Index)]): Vector[Index] = stack match {
+      case Nil => acc.sorted.toVector
+      case (startIx, endIx) :: rest if endIx > startIx + 1 =>
+        val (maxDistance, maxIndex): (Double, Index) = calcMaximalDistanceInSegment(points, startIx, endIx)
+        if (maxDistance > epsilon) loop(maxIndex :: acc, (maxIndex, endIx) :: (startIx, maxIndex) :: rest)
+        else loop(acc, rest)
+      case _ :: rest => loop(acc, rest)
+    }
+
+    if (nrPoints <= 2) points
+    else {
+      val endPointIndices: List[Index] = List(0, nrPoints - 1)
+      val indices: Vector[Index] = loop(endPointIndices, List((0, nrPoints - 1)))
+      indices.map(points)
+    }
   }
 
   private def modifiedDPSimplification(points: Vector[Point], nrPoints: Int, n: Int): Vector[Point] = {
