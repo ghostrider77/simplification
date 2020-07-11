@@ -11,6 +11,10 @@ class CurveSimplifier(points: Vector[Point]) {
                           modifiedDPSimplification,
                           dPSimplification}
 
+  def this(pairs: Seq[(Double, Double)]) = this(pairs.map{ case (x, y) => Point(x, y) }.toVector)
+
+  def this(xs: Seq[Double], ys: Seq[Double]) = this(xs.zip(ys))
+
   private val nrPoints: Int = points.length
 
   private def edgeCase(n: Int): Option[Vector[Point]] = {
